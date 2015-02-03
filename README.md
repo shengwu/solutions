@@ -1,4 +1,4 @@
-SPOJ solutions
-==============
+Solutions
+=========
 
-My solutions to Sphere Online Judge ([www.spoj.com](http://www.spoj.com/)) problems.
+My solutions to problems hosted on different websites such as SPOJ, Project Euler, etc
