@@ -1,3 +1,5 @@
+# run like `cat A-large-practice.in | elixirc codejam.exs`
+
 Code.compiler_options(ignore_module_conflict: true)
 
 defmodule Reader do
@@ -16,20 +18,20 @@ defmodule CodeJam do
       solve_line(1, n)
   end
 
+  defp solve_line(i, n) when i > n do
+    nil
+  end
+
   defp solve_line(i, n) do
-    cond do
-      i > n -> nil
-      true ->
-        [pancake_string, k_str]= String.split(Reader.read_line(), " ")
-        {k, _} = Integer.parse(k_str)
-        flips = Pancakes.count_flips(pancake_string, k)
-        if flips == -1 do
-          IO.puts "Case ##{i}: IMPOSSIBLE"
-        else
-          IO.puts "Case ##{i}: #{flips}"
-        end
-        solve_line(i+1, n)
+    [pancake_string, k_str]= String.split(Reader.read_line(), " ")
+    {k, _} = Integer.parse(k_str)
+    flips = Pancakes.count_flips(pancake_string, k)
+    if flips == -1 do
+      IO.puts "Case ##{i}: IMPOSSIBLE"
+    else
+      IO.puts "Case ##{i}: #{flips}"
     end
+    solve_line(i+1, n)
   end
 end
 
@@ -38,33 +40,36 @@ defmodule Pancakes do
     flips(String.graphemes(pancake_string), k)
   end
 
-  defp flips(seq, k) do
-    [head | rest] = seq
-    cond do
-      length(seq) < k ->
-        if all_happy_side(seq) do
-          0
-        else
-          -1
-        end
-      head == "+" ->
-        flips(rest, k)
-      true ->
-        case flips(first_k_flipped(rest, k-1), k) do
+  # TODO: length(seq) runs in O(n) time
+  defp flips(seq, k) when length(seq) < k do
+    case all_happy_side(seq) do
+      true -> 0
+      false -> -1
+    end
+  end
+
+  defp flips([head | tail], k) do
+    case head do
+      "+" -> flips(tail, k)
+      "-" ->
+        # we must flip the first pancake
+        case flips(first_k_flipped(tail, k-1), k) do
           -1 -> -1
           f -> f + 1
         end
     end
   end
 
-  defp first_k_flipped(seq, k) do
-    cond do
-      k == 0 -> seq
-      List.first(seq) == nil -> seq
-      true ->
-        [_ | rest] = seq
-        [flip(List.first(seq)) | first_k_flipped(rest, k-1)]
-    end
+  defp first_k_flipped([], _) do
+    []
+  end
+
+  defp first_k_flipped(seq, k) when k == 0 do
+    seq
+  end
+
+  defp first_k_flipped([head | tail], k) do
+    [flip(head) | first_k_flipped(tail, k-1)]
   end
 
   defp flip(pancake) do
@@ -74,13 +79,13 @@ defmodule Pancakes do
     end
   end
 
-  defp all_happy_side(seq) do
-    case List.first(seq) do
-      nil ->
-        true
-      "+" ->
-        [_ | rest] = seq
-        all_happy_side(rest)
+  defp all_happy_side([]) do
+    true
+  end
+
+  defp all_happy_side([head | tail]) do
+    case head do
+      "+" -> all_happy_side(tail)
       "-" -> false
     end
   end
