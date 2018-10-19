@@ -1,3 +1,6 @@
+import sys
+
+# part 1
 # 236 was the correct answer for me
 
 inp = '''
@@ -18,3 +21,43 @@ for command in commands:
     if direction == 270: coords[1] -= steps
 
 print(sum(abs(coord) for coord in coords))
+
+
+# part 2
+# 182 was the correct answer
+
+coords = [0, 0]
+direction = 0
+visited = set()
+
+for command in commands:
+    turn, steps = command[0], int(command[1:])
+    if turn == 'L': direction = (direction - 90) % 360
+    if turn == 'R': direction = (direction + 90) % 360
+    oldcoords = [coords[0], coords[1]]
+    if direction == 0: coords[0] += steps
+    if direction == 90: coords[1] += steps
+    if direction == 180: coords[0] -= steps
+    if direction == 270: coords[1] -= steps
+    if oldcoords[0] == coords[0]:
+        if oldcoords[1] > coords[1]:
+            inc = -1
+        else:
+            inc = 1
+        for i in range(oldcoords[1], coords[1], inc):
+            candidate = (coords[0], i)
+            if candidate in visited:
+                print(sum(abs(coord) for coord in candidate))
+                sys.exit(0)
+            visited.add(candidate)
+    elif oldcoords[1] == coords[1]:
+        if oldcoords[0] > coords[0]:
+            inc = -1
+        else:
+            inc = 1
+        for i in range(oldcoords[0], coords[0], inc):
+            candidate = (i, coords[1])
+            if candidate in visited:
+                print(sum(abs(coord) for coord in candidate))
+                sys.exit(0)
+            visited.add(candidate)
