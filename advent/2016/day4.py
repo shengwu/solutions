@@ -958,13 +958,7 @@ def most_common_five_letters(room_parts):
     alphabetization.
     '''
     counter = Counter(''.join(room_parts))
-    inverted = defaultdict(list)
-    for k, v in counter.items():
-        inverted[v].append(k)
-    for v in inverted.values():
-        v.sort()
-    counts = sorted(inverted.items(), key=lambda c: c[0], reverse=True)
-    letter_seq = list(itertools.chain.from_iterable(pair[1] for pair in counts))
+    letter_seq = sorted(counter, key=lambda L: (-counter[L], L))
     return ''.join(letter_seq[:5])
 
 def get_id_if_real_room(room):
