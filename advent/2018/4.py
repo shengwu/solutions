@@ -1281,7 +1281,6 @@ common_mins = defaultdict(Counter)
 
 # state as we iterate
 curr_guard = None
-is_awake = True
 last_time = None
 
 def min_counts(begind, endd):
@@ -1309,17 +1308,14 @@ for row in rows:
     if rest[0] == 'Guard':
         guard = int(rest[1][1:])
         curr_guard = guard
-        is_awake = True
         last_time = date_p
     elif rest[0] == 'falls':
-        is_awake = False
         last_time = date_p
     else:
         assert rest[0] == 'wakes'
         counts = min_counts(last_time, date_p)
         add_counts(common_mins[curr_guard], counts)
         minutes_asleep[curr_guard] += minutes_apart(last_time, date_p)
-
         last_time = date_p
 
 # part 1
