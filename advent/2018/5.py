@@ -5,7 +5,7 @@ inp = 'hHsSmMHhhHwWlLojYCclLyJtPpTZzqdFfDYymMjJxXQOiIiSbBsGLROorMmlgvVkiIKRrGxXg
 def react(s):
     stack = []
     for c in s:
-        if stack and c.lower() == stack[-1].lower() and c != stack[-1]:
+        if stack and c == stack[-1].swapcase():
             stack.pop()
         else:
             stack.append(c)
