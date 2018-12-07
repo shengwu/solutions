@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 
 inp = '''
 Step E must be finished before step H can begin.
@@ -127,23 +127,26 @@ visited = set()
 pool_size = 5
 pool = set()
 t = 0
+Worker = namedtuple('Worker', ('item', 'time_started'))
 
 def cost(let): return ord(let) - ord('A') + 61
 def avail(v): return all(dep in visited for dep in parents[v])
 def next_avail():
-    work = sorted(set(filter(avail, vertices)) - visited - set(w[0] for w in pool))
+    all_avail = set(filter(avail, vertices))
+    being_worked_on = set(w.item for w in pool)
+    work = sorted(all_avail - visited - being_worked_on)
     if work:
         return work[0]
 
 while len(visited) < len(vertices):
     # remove from pool
     for w in list(pool):
-        if t - w[1] == cost(w[0]):
-            visited.add(w[0])
+        if t - w.time_started == cost(w.item):
+            visited.add(w.item)
             pool.remove(w)
     # add work to pool
     while next_avail() and len(pool) < pool_size:
-        pool.add((next_avail(), t))
+        pool.add(Worker(next_avail(), t))
     t += 1
 
 print t - 1
