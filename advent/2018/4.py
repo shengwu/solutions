@@ -1279,10 +1279,6 @@ minutes_asleep = Counter()
 # guard id -> counter of minutes slept
 common_mins = defaultdict(Counter)
 
-# state as we iterate
-curr_guard = None
-last_time = None
-
 def min_counts(begind, endd):
     curr = datetime.datetime(*begind)
     end_d = datetime.datetime(*endd)
@@ -1298,6 +1294,11 @@ def minutes_apart(begind, endd):
 def add_counts(base, op):
     for k, v in op.items():
         base[k] += v
+
+
+# state as we iterate
+curr_guard = None
+last_time = None
 
 for row in rows:
     parts = row.split()
@@ -1319,9 +1320,9 @@ for row in rows:
         last_time = date_p
 
 # part 1
-guard = minutes_asleep.most_common(1)[0][0]
+most_asleep_guard = minutes_asleep.most_common(1)[0][0]
 most_common_minute = common_mins[guard].most_common(1)[0][0]
-print guard * most_common_minute
+print most_asleep_guard * most_common_minute
 
 # part 2
 max_count = -1
