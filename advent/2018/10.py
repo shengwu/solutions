@@ -1,3 +1,4 @@
+import operator
 import re
 
 inp = '''
@@ -311,16 +312,13 @@ for row in rows:
     points.append((x, y, dx, dy))
 
 def forward(points):
-    result = []
-    for pt in points:
-        result.append((pt[0] + pt[2], pt[1] + pt[3], pt[2], pt[3]))
-    return result
+    return apply_deltas(points, operator.add)
 
 def backward(points):
-    result = []
-    for pt in points:
-        result.append((pt[0] - pt[2], pt[1] - pt[3], pt[2], pt[3]))
-    return result
+    return apply_deltas(points, operator.sub)
+
+def apply_deltas(points, op):
+    return [(op(pt[0], pt[2]), op(pt[1], pt[3]), pt[2], pt[3]) for pt in points]
 
 def get_boundaries(points):
     minx = min(pt[1] for pt in points)
@@ -344,18 +342,15 @@ def graph(points):
 
 # first, find minima
 min_dx = float('inf')
-min_dy = float('inf')
 s = 0
 while True:
     points = forward(points)
-    minx, maxx, miny, maxy = get_boundaries(points)
+    minx, maxx, _, _ = get_boundaries(points)
     dx = maxx - minx
-    dy = maxy - miny
     if dx >= min_dx:
         # we've found the step after the message
         break
     else:
-        min_dx = dx
         min_dx = dx
     s += 1
 
