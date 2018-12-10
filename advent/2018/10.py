@@ -1,3 +1,4 @@
+from collections import namedtuple
 import operator
 import re
 
@@ -306,10 +307,11 @@ position=<-30730, -51442> velocity=< 3,  5>
 
 rows = inp.strip().split('\n')
 
+Point = namedtuple('Point', 'x y dx dy')
 points = []
 for row in rows:
     x, y, dx, dy = map(int, re.findall(r'-?\d+', row))
-    points.append((x, y, dx, dy))
+    points.append(Point(x, y, dx, dy))
 
 def forward(points):
     return apply_deltas(points, operator.add)
@@ -318,23 +320,23 @@ def backward(points):
     return apply_deltas(points, operator.sub)
 
 def apply_deltas(points, op):
-    return [(op(pt[0], pt[2]), op(pt[1], pt[3]), pt[2], pt[3]) for pt in points]
+    return [Point(op(pt.x, pt.dx), op(pt.y, pt.dy), pt.dx, pt.dy) for pt in points]
 
 def get_boundaries(points):
-    minx = min(pt[1] for pt in points)
-    maxx = max(pt[1] for pt in points)
-    miny = min(pt[0] for pt in points)
-    maxy = max(pt[0] for pt in points)
+    minx = min(pt.x for pt in points)
+    maxx = max(pt.x for pt in points)
+    miny = min(pt.y for pt in points)
+    maxy = max(pt.y for pt in points)
     return (minx, maxx, miny, maxy)
 
 def graph(points):
     minx, maxx, miny, maxy = get_boundaries(points)
     g = set()
     for pt in points:
-        g.add((pt[0], pt[1]))
-    for i in range(minx, maxx+1):
-        for j in range(miny, maxy+1):
-            if (j, i) in g:
+        g.add((pt.x, pt.y))
+    for j in range(miny, maxy+1):
+        for i in range(minx, maxx+1):
+            if (i, j) in g:
                 print '#',
             else:
                 print '.',
