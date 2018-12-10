@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+import re
 
 inp = '''
 position=< 51781,  41361> velocity=<-5, -4>
@@ -303,72 +303,36 @@ position=< 31146,  41362> velocity=<-3, -4>
 position=<-30730, -51442> velocity=< 3,  5>
 '''
 
-test = '''
-position=< 9,  1> velocity=< 0,  2>
-position=< 7,  0> velocity=<-1,  0>
-position=< 3, -2> velocity=<-1,  1>
-position=< 6, 10> velocity=<-2, -1>
-position=< 2, -4> velocity=< 2,  2>
-position=<-6, 10> velocity=< 2, -2>
-position=< 1,  8> velocity=< 1, -1>
-position=< 1,  7> velocity=< 1,  0>
-position=<-3, 11> velocity=< 1, -2>
-position=< 7,  6> velocity=<-1, -1>
-position=<-2,  3> velocity=< 1,  0>
-position=<-4,  3> velocity=< 2,  0>
-position=<10, -3> velocity=<-1,  1>
-position=< 5, 11> velocity=< 1, -2>
-position=< 4,  7> velocity=< 0, -1>
-position=< 8, -2> velocity=< 0,  1>
-position=<15,  0> velocity=<-2,  0>
-position=< 1,  6> velocity=< 1,  0>
-position=< 8,  9> velocity=< 0, -1>
-position=< 3,  3> velocity=<-1,  1>
-position=< 0,  5> velocity=< 0, -1>
-position=<-2,  2> velocity=< 2,  0>
-position=< 5, -2> velocity=< 1,  2>
-position=< 1,  4> velocity=< 2,  1>
-position=<-2,  7> velocity=< 2, -2>
-position=< 3,  6> velocity=<-1, -1>
-position=< 5,  0> velocity=< 1,  0>
-position=<-6,  0> velocity=< 2,  0>
-position=< 5,  9> velocity=< 1, -2>
-position=<14,  7> velocity=<-2,  0>
-position=<-3,  6> velocity=< 2, -1>
-'''
-
 rows = inp.strip().split('\n')
-#rows = test.strip().split('\n')
 
-pts = []
+points = []
 for row in rows:
-    c = row.find('<')
-    x = int(row[c+1:c+7])
-    y = int(row[c+8:c+15])
-    dx = int(row[-7:-5])
-    dy = int(row[-4:-1])
-    #print x, y, dx, dy
-    pts.append([x, y, dx, dy])
+    x, y, dx, dy = map(int, re.findall(r'-?\d+', row))
+    points.append((x, y, dx, dy))
 
-s = 0
-def step():
-    global s
-    s += 1
-    for pt in pts:
-        pt[0] += pt[2]
-        pt[1] += pt[3]
+def forward(points):
+    result = []
+    for pt in points:
+        result.append((pt[0] + pt[2], pt[1] + pt[3], pt[2], pt[3]))
+    return result
 
+def backward(points):
+    result = []
+    for pt in points:
+        result.append((pt[0] - pt[2], pt[1] - pt[3], pt[2], pt[3]))
+    return result
 
-def graph():
-    minx = min(pt[1] for pt in pts)
-    maxx = max(pt[1] for pt in pts)
-    miny = min(pt[0] for pt in pts)
-    maxy = max(pt[0] for pt in pts)
-    #print minx, maxx, miny, maxy
-    if maxx - minx > 300 or maxy - miny > 300:
-        return
+def get_boundaries(points):
+    minx = min(pt[1] for pt in points)
+    maxx = max(pt[1] for pt in points)
+    miny = min(pt[0] for pt in points)
+    maxy = max(pt[0] for pt in points)
+    return (minx, maxx, miny, maxy)
+
+def graph(points):
+    minx, maxx, miny, maxy = get_boundaries(points)
     g = set()
-    for pt in pts:
+    for pt in points:
         g.add((pt[0], pt[1]))
     for i in range(minx, maxx+1):
         for j in range(miny, maxy+1):
@@ -377,10 +341,23 @@ def graph():
             else:
                 print '.',
         print
-    print
-    raw_input()
 
+# first, find minima
+min_dx = float('inf')
+min_dy = float('inf')
+s = 0
 while True:
-    graph()
-    step()
-    print s
+    points = forward(points)
+    minx, maxx, miny, maxy = get_boundaries(points)
+    dx = maxx - minx
+    dy = maxy - miny
+    if dx >= min_dx:
+        # we've found the step after the message
+        break
+    else:
+        min_dx = dx
+        min_dx = dx
+    s += 1
+
+graph(backward(points))
+print s
