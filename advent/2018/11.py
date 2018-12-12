@@ -22,6 +22,7 @@ def build_sum_grid(grid):
     sum_grid = empty_grid(len(grid)+1)
     for i in xrange(len(grid)-1, -1, -1):
         for j in xrange(len(grid)-1, -1, -1):
+            # Sum the neighbors below and to the right, then subtract the overlap
             sum_grid[i][j] = grid[i][j] + sum_grid[i+1][j] + sum_grid[i][j+1] - sum_grid[i+1][j+1]
     return sum_grid
 
@@ -35,6 +36,7 @@ def square_total_at(sum_grid, i, j, sq_side_len):
             sum_grid[i+sq_side_len][j+sq_side_len])
 
 def argmax(seq, key=lambda x: x):
+    '''Returns the element in `seq` with the maximum value according to `key`'''
     m = float('-inf')
     marg = None
     for elem in seq:
