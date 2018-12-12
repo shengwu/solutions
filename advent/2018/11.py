@@ -36,7 +36,12 @@ def square_total_at(sum_grid, i, j, sq_side_len):
             sum_grid[i+sq_side_len][j+sq_side_len])
 
 def argmax(seq, key=lambda x: x):
-    '''Returns the element in `seq` with the maximum value according to `key`'''
+    '''
+    Returns the element in `seq` with the maximum value according to `key`
+
+    For some reason, the built in max() function that does the same thing
+    is a LOT slower
+    '''
     m = float('-inf')
     marg = None
     for elem in seq:
