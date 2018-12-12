@@ -57,9 +57,9 @@ def max_level_n(side_len, serial):
     grid = build_grid(side_len, serial)
     sum_grid = build_sum_grid(grid)
     valid_tuples = ((i, j, k)
-                         for i in xrange(side_len)
-                         for j in xrange(side_len)
-                         for k in xrange(side_len-max(i,j), -1, -1))
+                    for i in xrange(side_len)
+                    for j in xrange(side_len)
+                    for k in xrange(side_len-max(i,j)+1))
     return argmax(valid_tuples,
                   key=lambda sq: square_total_at(sum_grid, sq[0], sq[1], sq[2]))
 
