@@ -150,6 +150,8 @@ inp = '''   /-------------------------------------------------------------------
                                                                               \---------------/                                                       '''
 
 
+# test cases
+
 #inp = '''/->-\        
 #|   |  /----\\
 #| /-+--+-\  |
@@ -165,198 +167,142 @@ inp = '''   /-------------------------------------------------------------------
 #  |   ^
 #  \<->/'''
 
-cart_icons = 'v>^<'
-ints = '+'
+
+DOWN, RIGHT, UP, LEFT = 0, 1, 2, 3
+
+straight_track = {
+    RIGHT: '-',
+    LEFT: '-',
+    UP: '|',
+    DOWN: '|',
+}
+
+next_turn = {
+    'left': 'straight',
+    'straight': 'right',
+    'right': 'left',
+}
+
+turns = {
+    (DOWN, 'left'): RIGHT,
+    (DOWN, 'right'): LEFT,
+    (DOWN, 'straight'): DOWN,
+    (UP, 'left'): LEFT,
+    (UP, 'right'): RIGHT,
+    (UP, 'straight'): UP,
+    (RIGHT, 'left'): UP,
+    (RIGHT, 'right'): DOWN,
+    (RIGHT, 'straight'): RIGHT,
+    (LEFT, 'left'): DOWN,
+    (LEFT, 'right'): UP,
+    (LEFT, 'straight'): LEFT,
+}
+
 corners = '/\\'
+corner_turn = {
+    (DOWN, '/'): LEFT,
+    (DOWN, '\\'): RIGHT,
+    (UP, '/'): RIGHT,
+    (UP, '\\'): LEFT,
+    (RIGHT, '/'): UP,
+    (RIGHT, '\\'): DOWN,
+    (LEFT, '/'): DOWN,
+    (LEFT, '\\'): UP,
+}
 
-orig = inp.split('\n')
-#print inp
-carts = []
-rows = []
+velocity = {
+    UP: [-1, 0],
+    DOWN: [1, 0],
+    RIGHT: [0, 1],
+    LEFT: [0, -1],
+}
 
-for i, row in enumerate(orig):
-    if len(row) != 150:
-        print 'BAD ROW', i
-    new = []
-    for j, elem in enumerate(row):
-        if elem in cart_icons:
-            turn_choice = 0
-            facing = cart_icons.index(elem)
-            carts.append([i, j, facing, turn_choice])
-            if facing in (0, 2):
-                new.append('|')
-            else:
-                new.append('-')
-        else:
-            new.append(elem)
-    rows.append(new)
-
-#print len(rows)
-#print len(rows[0])
-#print carts
-#print
-#print
-#print
-
-
+intersection = '+'
 cart_icons = 'v>^<'
-def tick(carts):
-    was_collision = False
-    carts.sort(key=lambda c: (c[0], c[1]))
-    #print carts
-    #print carts
-    to_rem = set()
-    for cart in carts:
-        #print carts
-        i, j, facing, turn = cart
-        if (i, j) in to_rem:
-            continue
-        #print cart
-        if facing == 0:
-            currspot = rows[i][j]
-            nextspot = rows[i+1][j] 
-            assert nextspot != ' '
-            cart[0] += 1
-            if nextspot == '|':
-                pass
-            elif nextspot == '/': 
-                cart[2] = 3
-            elif nextspot == '\\': 
-                cart[2] = 1
-            elif nextspot == '+':
-                if turn == 0:
-                    cart[2] = 1
-                elif turn == 1:
-                    # go straight
-                    pass
-                elif turn == 2:
-                    cart[2] = 3
-                cart[3] = (cart[3] + 1) % 3
-        elif facing == 1:
-            currspot = rows[i][j]
-            nextspot = rows[i][j+1] 
-            assert nextspot != ' '
-            cart[1] += 1
-            if nextspot == '-':
-                pass
-            elif nextspot == '/': 
-                cart[2] = 2
-            elif nextspot == '\\': 
-                cart[2] = 0
-            elif nextspot == '+':
-                if turn == 0:
-                    cart[2] = 2
-                elif turn == 1:
-                    # go straight
-                    pass
-                elif turn == 2:
-                    cart[2] = 0
-                cart[3] = (cart[3] + 1) % 3
-        elif facing == 2:
-            currspot = rows[i][j]
-            nextspot = rows[i-1][j] 
-            assert nextspot != ' '
-            cart[0] -= 1
-            if nextspot == '|':
-                pass
-            elif nextspot == '/': 
-                cart[2] = 1
-            elif nextspot == '\\': 
-                cart[2] = 3
-            elif nextspot == '+':
-                if turn == 0:
-                    cart[2] = 3
-                elif turn == 1:
-                    # go straight
-                    pass
-                elif turn == 2:
-                    cart[2] = 1
-                cart[3] = (cart[3] + 1) % 3
-        elif facing == 3:
-            currspot = rows[i][j]
-            nextspot = rows[i][j-1] 
-            assert nextspot != ' '
-            cart[1] -= 1
-            if nextspot == '-':
-                pass
-            elif nextspot == '/': 
-                cart[2] = 0
-            elif nextspot == '\\': 
-                cart[2] = 2
-            elif nextspot == '+':
-                if turn == 0:
-                    cart[2] = 0
-                elif turn == 1:
-                    # go straight
-                    pass
-                elif turn == 2:
-                    cart[2] = 2
-                cart[3] = (cart[3] + 1) % 3
-        c = collisions(carts)
-        if c:
-             was_collision = True
-        to_rem.update(c)
-    #print to_rem
-    '''
-    rem2 = []
-    for cart in carts:
-        if (cart[0], cart[1]) in to_rem:
-            rem2.append(cart)
-    if rem2:
-        print rem2
-    while rem2:
-        carts.remove(rem2.pop())
-    '''
-    return to_rem
 
+def parse_input(orig):
+    carts = []
+    rows = []
+    for i, row in enumerate(orig):
+        new_row = []
+        for j, elem in enumerate(row):
+            if elem in cart_icons:
+                facing = cart_icons.index(elem)
+                carts.append([i, j, facing, 'left'])
+                # put track where the cart was
+                new_row.append(straight_track[facing])
+            else:
+                new_row.append(elem)
+        rows.append(new_row)
+    return carts, rows
+
+
+def move_cart(cart):
+    x, y, facing, turn = cart
+    dx, dy = velocity[facing]
+    # move cart
+    cart[0] += dx
+    cart[1] += dy
+    # evaluate whether to turn the cart
+    currspot = track[x][y]
+    nextspot = track[x+dx][y+dy] 
+    assert nextspot != ' '
+    if nextspot == straight_track[facing]:
+        return
+    if nextspot in corners:
+        cart[2] = corner_turn[(facing, nextspot)]
+        return
+    assert nextspot == intersection
+    cart[2] = turns[(facing, turn)]
+    cart[3] = next_turn[turn]
+
+
+def tick(carts, track):
+    '''
+    Moves carts one position forward.
+    Returns a set of x, y coordinates of carts to remove.
+    '''
+    carts.sort()
+    to_remove = set()
+    for cart in carts:
+        i, j, _, _ = cart
+        if (i, j) in to_remove:
+            continue
+        move_cart(cart)
+        to_remove.update(collisions(carts))
+    return to_remove
 
 def collisions(carts):
     to_remove = []
     for i, a in enumerate(carts):
         for b in carts[i+1:]:
-            if a[0] == b[0] and a[1] == b[1]:
-                #print a, b
+            if (a[0], a[1]) == (b[0], b[1]):
                 to_remove.append((a[0], a[1]))
     return to_remove
 
+def remove_carts(to_remove, carts):
+    remove_list = []
+    for cart in carts:
+        x, y, _, _ = cart
+        if (x, y) in to_remove:
+            remove_list.append(cart)
+    while remove_list:
+        carts.remove(remove_list.pop())
 
-# TODO swap coordinates! x and y are reversed
-'''
-while not tick(carts):
-    pass
-c = collisions(carts)
-rem2 = []
-for cart in carts:
-    if (cart[0], cart[1]) in c:
-        rem2.append(cart)
-if rem2:
-    print rem2
-while rem2:
-    carts.remove(rem2.pop())
-'''
-# 67,148 was wrong
-# incorporated carts in the top row move first
-# 68,148 was wrong
-# 129,146 was wrong
+
+# solve parts 1 and 2
+carts, track = parse_input(inp.split('\n'))
+first_collision = True
 
 while len(carts) > 1:
-    to_rem = tick(carts)
-    if to_rem:
-        print 'was collision', to_rem
-    rem2 = []
-    for cart in carts:
-        if (cart[0], cart[1]) in to_rem:
-            rem2.append(cart)
-    if rem2:
-        print rem2
-    while rem2:
-        carts.remove(rem2.pop())
-print carts
+    to_remove = tick(carts, track)
+    if first_collision and to_remove:
+        # don't forget to swap the coordinates!
+        y, x = list(to_remove)[0]
+        print '{},{}'.format(x, y)
+        first_collision = False
+    remove_carts(to_remove, carts)
 
-#28, 90 was wrong
-#0, 125 was wrong
-#0, 126 was wrong
-# this was a dumb submission
-# 65,46 was wrong
-# 149,96 was wrong
-
+assert len(carts) == 1
+y, x, _, _ = carts[0]
+print '{},{}'.format(x, y)
