@@ -296,12 +296,13 @@ first_collision = True
 
 while len(carts) > 1:
     to_remove = tick(carts, track)
-    if first_collision and to_remove:
-        # don't forget to swap the coordinates!
-        y, x = list(to_remove)[0]
-        print '{},{}'.format(x, y)
-        first_collision = False
-    remove_carts(to_remove, carts)
+    if to_remove:
+        if first_collision:
+            # don't forget to swap the coordinates!
+            y, x = list(to_remove)[0]
+            print '{},{}'.format(x, y)
+            first_collision = False
+        remove_carts(to_remove, carts)
 
 assert len(carts) == 1
 y, x, _, _ = carts[0]
