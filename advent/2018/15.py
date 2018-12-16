@@ -1,4 +1,3 @@
-import copy
 from collections import deque
 
 class Player(object):
@@ -14,32 +13,25 @@ class Player(object):
 def loc(player):
     return (player.x, player.y)
 
-def around(player):
+def around_coords(x, y):
     return set(
-        (player.x+dx, player.y+dy)
+        (x+dx, y+dy)
         for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1))
     )
 
+def around(player):
+    return around_coords(*loc(player))
+
 def attackable(player, elves, goblins):
     neighboring_spots = around(player)
-    if player.type == 'goblin':
-        enemies = elves
-    else:
-        enemies = goblins
-    result = []
-    for enemy in enemies:
-        if loc(enemy) in neighboring_spots:
-            result.append(enemy)
-    return result
+    enemies = elves if player.type == 'goblin' else goblins
+    return filter(lambda enemy: loc(enemy) in neighboring_spots, enemies)
 
 def attack(attackable, power=3):
     assert len(attackable) > 0
     # find enemies with the lowest hp
-    lowest = []
     min_hp = min(a.hp for a in attackable)
-    for enemy in attackable:
-        if enemy.hp == min_hp:
-            lowest.append(enemy)
+    lowest = filter(lambda enemy: enemy.hp == min_hp, attackable)
     # sort by location
     lowest.sort(key=loc)
     # attack!
@@ -48,59 +40,73 @@ def attack(attackable, power=3):
 def bfs_dist(grid, players_locs, start, end):
     q = deque([(0,) + start])
     visited = set()
+    def obstructed(x, y):
+        return grid[x][y] == '#' or (x, y) in players_locs
     while q:
         dist, x, y = q.popleft()
         if (x, y) == end:
-            #print 'bfs', players_locs, start, end, dist
             return dist
-        for i, j in [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]:
-            if grid[i][j] != '#' and (i, j) not in visited and (i, j) not in players_locs:
+        for i, j in around_coords(x, y):
+            if not obstructed(i, j) and (i, j) not in visited:
                 visited.add((i, j))
                 q.append((dist+1, i, j))
-    #print 'bfs', players_locs, start, end, dist, 'inf'
     return float('inf')
 
 def move(player, goblins, elves, grid):
     # run bfs to find closest enemy
     # goal: collect squares adjacent to enemies
+
+    goblin_locs = set(map(loc, goblins))
+    elf_locs = set(map(loc, elves))
+    enemy_locs = goblin_locs if player.type == 'elf' else elf_locs
+    friendly_locs = elf_locs if player.type == 'elf' else goblin_locs
+    players_locs = enemy_locs | friendly_locs
+
+    def obstructed(x, y, avoid_locs=players_locs):
+        return grid[x][y] == '#' or (x, y) in avoid_locs
+
     q = deque([(0,) + loc(player)])
     visited = set()
     possibilities = set()
-    if player.type == 'goblin':
-        enemy_locs = set(map(loc, elves))
-        friendly_locs = set(map(loc, goblins))
-    else:
-        enemy_locs = set(map(loc, goblins))
-        friendly_locs = set(map(loc, elves))
-    players_locs = enemy_locs | friendly_locs
     min_dist = float('inf')
     while q:
         dist, x, y = q.popleft()
         if dist > min_dist:
             break
-        for i, j in [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]:
-            if (i, j) in enemy_locs and grid[i][j] != '#' and (i, j) not in visited and (i, j) not in friendly_locs:
+        for i, j in around_coords(x, y):
+            if ((i, j) in enemy_locs and
+                    not obstructed(i, j, avoid_locs=friendly_locs) and
+                    (i, j) not in visited):
                 #print (i, j), 'in enemy locs', (dist, x, y)
                 possibilities.add((dist, x, y))
                 min_dist = min(min_dist, dist)
                 continue
-            if grid[i][j] != '#' and (i, j) not in visited and (i, j) not in players_locs:
+            if not obstructed(i, j) and (i, j) not in visited:
                 visited.add((i, j))
                 q.append((dist+1, i, j))
+
     if len(possibilities) == 0:
         # couldn't find anywhere to attack
         # maybe enemies are already surrounded on all sides
         # maybe there are no enemies
         return
+    # choose a spot where we can attack an enemy
     final = filter(lambda p: p[0] == min_dist, possibilities)
     chosen = sorted((p[1], p[2]) for p in possibilities)[0]
 
-    possible_next_steps = [l for l in around(player) if grid[l[0]][l[1]] != '#' and l not in players_locs]
-    next_step_dists = [bfs_dist(grid, players_locs, (s[0], s[1]), chosen) for s in possible_next_steps]
-    min_next_step_dist = min(next_step_dists)
-    tossup_next_steps = [p[1] for p in filter(lambda p: next_step_dists[p[0]] == min_next_step_dist, enumerate(possible_next_steps))]
-    chosen_next_step = sorted(tossup_next_steps)[0]
-    #print player, enemy_locs, min_next_step_dist, possible_next_steps, chosen_next_step
+    # choose a step towards that enemy on the shortest path
+    possible_next_steps = filter(
+        lambda loc: not obstructed(loc[0], loc[1], avoid_locs=friendly_locs),
+        around(player))
+    next_steps_with_dists = [(bfs_dist(grid, players_locs, (s[0], s[1]), chosen), s)
+                             for s in possible_next_steps]
+    # several assumptions baked into the following line
+    # next_steps_with_dists is a list of tuples (dist, coordinate_tuple)
+    # we want the minimum distance
+    # and if there are multiple steps for the minimum distance path, we'll take the
+    # one that occurs first in reading order
+    # using a simple sort does this for us
+    chosen_next_step = sorted(next_steps_with_dists)[0][1]
     player.x = chosen_next_step[0]
     player.y = chosen_next_step[1]
 
@@ -163,7 +169,7 @@ def outcome(turns, goblins, elves):
     #print turns, sum(g.hp for g in goblins)
     return turns * sum(g.hp for g in goblins)
 
-def get_battle_outcome(inp, elf_power=3):
+def parse_input(inp):
     elves = []
     goblins = []
     grid = inp.strip().split('\n')
@@ -173,45 +179,36 @@ def get_battle_outcome(inp, elf_power=3):
                 goblins.append(Player(200, 'goblin', i, j))
             elif elem == 'E':
                 elves.append(Player(200, 'elf', i, j))
+    return elves, goblins, grid
+
+def get_battle_outcome_with_elf_count(inp, elf_power=3):
+    elves, goblins, grid = parse_input(inp)
     turns = 0
-    #while len(goblins) > 0 and len(elves) > 0:
     while True:
         tick(goblins, elves, grid, elf_power=elf_power)
         if len(goblins) == 0 or len(elves) == 0:
             break
         turns += 1
-    return outcome(turns, goblins, elves)
+    return outcome(turns, goblins, elves), len(elves)
+
+def get_battle_outcome(inp, elf_power=3):
+    battle_outcome, _ =  get_battle_outcome_with_elf_count(inp, elf_power=elf_power)
+    return battle_outcome
 
 def get_elf_power_with_no_deaths(inp):
-    orig_elves = []
-    orig_goblins = []
-    grid = inp.strip().split('\n')
-    for i, row in enumerate(grid):
-        for j, elem in enumerate(row):
-            if elem == 'G':
-                orig_goblins.append(Player(200, 'goblin', i, j))
-            elif elem == 'E':
-                orig_elves.append(Player(200, 'elf', i, j))
+    orig_elves, orig_goblins, grid = parse_input(inp)
+
+    def run(elf_power):
+        curr_outcome, elf_count = get_battle_outcome_with_elf_count(inp, elf_power=elf_power)
+        if elf_count != len(orig_elves):
+            return None
+        return curr_outcome
 
     elf_power = 3
-    def run():
-        elves = copy.deepcopy(orig_elves)
-        goblins = copy.deepcopy(orig_goblins)
-        turns = 0
-        #while len(goblins) > 0 and len(elves) > 0:
-        while True:
-            tick(goblins, elves, grid, elf_power=elf_power)
-            if len(goblins) == 0 or len(elves) == 0:
-                break
-            turns += 1
-        if len(elves) != len(orig_elves):
-            return None
-        return outcome(turns, goblins, elves)
-
-    result = run()
+    result = run(elf_power)
     while result is None:
         elf_power += 1
-        result = run()
+        result = run(elf_power)
     return result
 
 
