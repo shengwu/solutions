@@ -88,8 +88,10 @@ def move(player, goblins, elves, grid):
                 visited.add((i, j))
                 q.append((dist+1, i, j))
     if len(possibilities) == 0:
-        return 'no_targets'
-    #print 'whittlig', min_dist, possibilities
+        # couldn't find anywhere to attack
+        # maybe enemies are already surrounded on all sides
+        # maybe there are no enemies
+        return
     final = filter(lambda p: p[0] == min_dist, possibilities)
     chosen = sorted((p[1], p[2]) for p in possibilities)[0]
 
@@ -103,8 +105,9 @@ def move(player, goblins, elves, grid):
     player.y = chosen_next_step[1]
 
 def turn(player, goblins, elves, grid, elf_power):
+    '''Returns true if the player did something'''
     if player.hp <= 0:
-        return
+        return False
     def try_attack():
         '''Returns True if we attacked'''
         enemies = attackable(player, elves, goblins)
@@ -115,9 +118,10 @@ def turn(player, goblins, elves, grid, elf_power):
                 attack(enemies)
             return True
         return False
-    if not try_attack():
-        move(player, goblins, elves, grid)
-        try_attack()
+    if try_attack():
+        return True
+    move(player, goblins, elves, grid)
+    return try_attack()
 
 def remove_dead(players):
     to_remove = filter(lambda p: p.hp <= 0, players)
@@ -145,18 +149,18 @@ def print_game_state(grid, goblins, elves):
 def tick(goblins, elves, grid, elf_power):
     #print_game_state(grid, goblins, elves)
     order = sorted(goblins + elves, key=loc)
+    went = 0
     for player in order:
-        if turn(player, goblins, elves, grid, elf_power=elf_power) == 'no_targets':
-            return 'no_targets'
+        turn(player, goblins, elves, grid, elf_power=elf_power)
         remove_dead(goblins)
         remove_dead(elves)
 
 def outcome(turns, goblins, elves):
     assert len(goblins) == 0 or len(elves) == 0
     if len(goblins) == 0:
-        print turns, sum(e.hp for e in elves)
+        #print turns, sum(e.hp for e in elves)
         return turns * sum(e.hp for e in elves)
-    print turns, sum(g.hp for g in goblins)
+    #print turns, sum(g.hp for g in goblins)
     return turns * sum(g.hp for g in goblins)
 
 def get_battle_outcome(inp, elf_power=3):
@@ -208,7 +212,6 @@ def get_elf_power_with_no_deaths(inp):
     while result is None:
         elf_power += 1
         result = run()
-    print elf_power
     return result
 
 
