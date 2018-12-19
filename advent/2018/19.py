@@ -1,5 +1,3 @@
-from collections import Counter, defaultdict
-
 inp = '''
 #ip 4
 addi 4 16 4
@@ -40,20 +38,7 @@ seti 0 6 0
 seti 0 7 4
 '''
 
-#inp = '''
-#seti 5 0 1
-#seti 6 0 2
-#addi 0 1 0
-#addr 1 2 3
-#setr 1 0 0
-#seti 8 0 4
-#seti 9 0 5
-#'''
-
-ip_reg = 4
-#ip_reg = 0
-def exec_cmd(cmd, regs, ip):
-    #print cmd
+def exec_cmd(cmd, regs, ip, ip_reg):
     proccmd = cmd[0]
     a, b, c = cmd[1:]
     # make a copy
@@ -113,54 +98,38 @@ def exec_cmd(cmd, regs, ip):
 
 rows = inp.strip().split('\n')
 insts = []
-
+ip_reg = int(rows[0].split()[1])
 for row in rows[1:]:
     parts = row.split()
     inst = parts[0]
     a, b, c = [int(p) for p in parts[1:]]
-    cmd = [inst, a, b, c]
-    insts.append(cmd)
-    #print cmd
+    insts.append((inst, a, b, c))
 
-'''
+# part 1
+# runs a lot faster in pypy
 regs = [0] * 6
-regs[0] = 1
-#regs[5] = 10551260 - 1
 ip = 0
 while ip < len(insts):
-    regs, ip = exec_cmd(insts[ip], regs, ip)
-    #regs[5] = 10551260 - 1
-    print regs, ip
-    raw_input()
+    regs, ip = exec_cmd(insts[ip], regs, ip, ip_reg)
     ip += 1
 print regs[0]
-'''
 
+# part 2
+def sum_of_factors(n):
+    return sum(i for i in xrange(1, n+1) if n % i == 0)
 
-# 0 is not correct
-# 527563 is not correct
-# 527572 is not correct
-# 11078861 is not correct!!
-
-
-# part 2 test code
-
-'''
-regs = [0, 10551260, 527562*5, 4, 2, 0]
-#regs = [527563, 10551260, 10551259, 10551260, 11, 0]
-ip = 3
+regs = [1] + [0] * 5
+ip = 0
 while ip < len(insts):
-    regs, ip = exec_cmd(insts[ip], regs, ip)
-    #regs[5] = 10551260 - 1
-    print regs, ip
-    raw_input()
+    if ip == 2:
+        print sum_of_factors(max(regs))
+        break
+    regs, ip = exec_cmd(insts[ip], regs, ip, ip_reg)
     ip += 1
-print regs[0]
-'''
 
 
-# Analysis
-# ========
+# Part 2 Analysis
+# ===============
 # 
 # 0 ['addi', 4, 16, 4]
 # 1 ['seti', 1, 9, 3]
@@ -282,7 +251,7 @@ print regs[0]
 # 
 # prime factorization of 
 # 10551260
-# 2 × 2 × 5 × 527563
+# 2 x 2 x 5 x 527563
 # 
 # the value of reg 0 when reg e becomes 10551261 is what it will be when it exits
 # the only times things get copied into reg 0 are when 
