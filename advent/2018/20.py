@@ -12,15 +12,13 @@ def step(curr, letter):
     d = delta(letter)
     return (curr[0] + d[0], curr[1] + d[1])
 
-def traverse(exp, curr, edges, vertices):
+def traverse(exp, curr, edges):
     i = 0
     orig_loc = curr
     while i < len(exp):
-        #print exp, curr, i
-        #raw_input()
         e = exp[i]
         if e == '(':
-            i += traverse(exp[i+1:], curr, edges, vertices) + 1
+            i += traverse(exp[i+1:], curr, edges) + 1
         elif e == ')':
             return i
         elif e == '|':
@@ -29,13 +27,10 @@ def traverse(exp, curr, edges, vertices):
             assert e in 'NEWS'
             edges[curr].add(delta(e))
             curr = step(curr, e)
-            vertices.add(curr)
         i += 1
     return None
 
-
-
-def furthest(vertices, edges, start=(0, 0)):
+def furthest(edges, start=(0, 0)):
     q = deque([(0,) + start])
     visited = set()
     max_dist = 0
@@ -43,7 +38,6 @@ def furthest(vertices, edges, start=(0, 0)):
     while q:
         dist, x, y = q.popleft()
         if dist > max_dist:
-            #print x, y
             max_dist = dist
         if dist >= 1000:
             at_least_a_thousand_away += 1
@@ -54,15 +48,11 @@ def furthest(vertices, edges, start=(0, 0)):
                 q.append((dist+1, nx, ny))
     return max_dist, at_least_a_thousand_away
 
-
 def get_furthest(regex):
     start = (0, 0)
-    vertices = set([start])
     edges = defaultdict(set)
-    traverse(regex, start, edges, vertices)
-    #print vertices, edges
-    return furthest(vertices, edges)
-
+    traverse(regex, start, edges)
+    return furthest(edges)
 
 regex = open('20.txt').read().strip()[1:-1]
 
