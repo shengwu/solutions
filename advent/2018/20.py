@@ -8,9 +8,11 @@ def delta(letter):
         'W': (0, -1),
     }[letter]
 
+def apply_delta(curr, delta):
+    return (curr[0] + delta[0], curr[1] + delta[1])
+
 def step(curr, letter):
-    d = delta(letter)
-    return (curr[0] + d[0], curr[1] + d[1])
+    return apply_delta(curr, delta(letter))
 
 def traverse(exp, curr, edges):
     i = 0
@@ -41,11 +43,11 @@ def furthest(edges, start=(0, 0)):
             max_dist = dist
         if dist >= 1000:
             at_least_a_thousand_away += 1
-        for i, j in edges[(x, y)]:
-            nx, ny = x+i, y+j
-            if (nx, ny) not in visited:
-                visited.add((nx, ny))
-                q.append((dist+1, nx, ny))
+        for delta in edges[(x, y)]:
+            neighbor = apply_delta((x, y), delta)
+            if neighbor not in visited:
+                visited.add(neighbor)
+                q.append((dist+1,) + neighbor)
     return max_dist, at_least_a_thousand_away
 
 def get_furthest(regex):
