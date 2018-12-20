@@ -11,24 +11,22 @@ def delta(letter):
 def apply_delta(curr, delta):
     return (curr[0] + delta[0], curr[1] + delta[1])
 
-def step(curr, letter):
-    return apply_delta(curr, delta(letter))
-
-def traverse(exp, curr, edges):
+def traverse(exp, curr_loc, edges):
     i = 0
-    orig_loc = curr
+    orig_loc = curr_loc
     while i < len(exp):
         e = exp[i]
         if e == '(':
-            i += traverse(exp[i+1:], curr, edges) + 1
+            i += traverse(exp[i+1:], curr_loc, edges)
         elif e == ')':
-            return i
+            return i + 1
         elif e == '|':
-            curr = orig_loc
+            curr_loc = orig_loc
         else:
             assert e in 'NEWS'
-            edges[curr].add(delta(e))
-            curr = step(curr, e)
+            old = curr_loc
+            curr_loc = apply_delta(curr_loc, delta(e))
+            edges[old].add(curr_loc)
         i += 1
     return None
 
@@ -43,17 +41,15 @@ def furthest(edges, start=(0, 0)):
             max_dist = dist
         if dist >= 1000:
             at_least_a_thousand_away += 1
-        for delta in edges[(x, y)]:
-            neighbor = apply_delta((x, y), delta)
+        for neighbor in edges[(x, y)]:
             if neighbor not in visited:
                 visited.add(neighbor)
                 q.append((dist+1,) + neighbor)
     return max_dist, at_least_a_thousand_away
 
 def get_furthest(regex):
-    start = (0, 0)
     edges = defaultdict(set)
-    traverse(regex, start, edges)
+    traverse(regex, (0, 0), edges)
     return furthest(edges)
 
 regex = open('20.txt').read().strip()[1:-1]
