@@ -1,3 +1,4 @@
+import re
 import z3
 
 inp = '''
@@ -1006,17 +1007,13 @@ pos=<36883774,-13073625,-13164796>, r=61796081
 rows = inp.strip().split('\n')
 bots = []
 for row in rows:
-    parts = row.split(',')
-    cord1 = int(parts[0].split('<')[1])
-    cord2 = int(parts[1])
-    cord3 = int(parts[2][:-1])
-    rad = int(parts[3][3:])
+    cord1, cord2, cord3, rad = map(int, re.findall(r'-?\d+', row))
     bots.append((cord1, cord2, cord3, rad))
 
 # part 1
 
 def dist((a, b, c), (x, y, z)):
-    return abs(a-x) + abs(b-y) + abs(c - z)
+    return abs(a-x) + abs(b-y) + abs(c-z)
 max_rad = max(bots, key=lambda b: b[3])
 print sum(dist(max_rad[:3], bot[:3]) <= max_rad[3] for bot in bots)
 
@@ -1031,8 +1028,7 @@ y = z3.Int('y')
 z = z3.Int('z')
 for i, j, k, r in bots:
     o.add_soft(zabs(i-x) + zabs(j-y) + zabs(k-z) <= r)
-# find something that satisfies the most constraints,
-# and is closest to the origin
+# find something that satisfies the most constraints, and is closest to the origin
 o.minimize(zabs(x) + zabs(y) + zabs(z))
 
 o.check()
