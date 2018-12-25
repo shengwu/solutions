@@ -1,3 +1,4 @@
+from collections import defaultdict, deque
 import re
 
 inp = '''
@@ -1103,46 +1104,29 @@ for row in rows:
 def dist((a, b, c, d), (x, y, z, k)):
     return abs(a-x) + abs(b-y) + abs(c - z)+ abs(d - k)
 
-def combine_groups(groups):
-    for group1 in groups:
-        for group2 in groups:
-            if group1 == group2:
-                continue
-            #print group1, group2
-            for pt1 in group1:
-                for pt2 in group2:
-                    if dist(pt1, pt2) <= 3:
-                        group1 += group2
-                        groups.remove(group2)
-                        #print 'COMBINED'
-                        return
-
 def constellations(lst):
-    lst.sort()
-    groups = []
-    for pt in lst:
-        if len(groups) == 0:
-            groups.append([pt])
-            continue
-        found_pt = False
-        for group in groups:
-            for pt2 in group:
-                if dist(pt, pt2) <= 3:
-                    group.append(pt)
-                    found_pt = True
-                    break
-            if found_pt:
-                break
-        if not found_pt:
-            groups.append([pt])
-    prev_len = None
-    while prev_len != len(groups):
-        prev_len = len(groups)
-        #print groups
-        #print 'combining'
-        combine_groups(groups)
-    return len(groups)
+    # make a list of edges
+    edges = defaultdict(set)
+    for i, pt in enumerate(lst):
+        for pt2 in lst[i+1:]:
+            if dist(pt, pt2) <= 3:
+                edges[pt].add(pt2)
+                edges[pt2].add(pt)
+    # visit subtrees
+    groups = defaultdict(set)
+    not_visited = set(lst)
+    q = deque()
+    while not_visited:
+        if q:
+            curr, group = q.popleft()
+        else:
+            curr = not_visited.pop()
+            group = curr
+        groups[group].add(curr)
+        for neighbor in edges[curr]:
+            if neighbor in not_visited:
+                not_visited.remove(neighbor)
+                q.append((neighbor, group))
+    return len(groups.keys())
 
 print constellations(points)
-
-# 525 is wrong
