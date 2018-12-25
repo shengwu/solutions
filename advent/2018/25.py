@@ -1116,7 +1116,7 @@ def constellations(lst):
     groups = defaultdict(set)
     not_visited = set(lst)
     q = deque()
-    while not_visited:
+    while not_visited or q:
         if q:
             curr, group = q.popleft()
         else:
@@ -1127,6 +1127,12 @@ def constellations(lst):
             if neighbor in not_visited:
                 not_visited.remove(neighbor)
                 q.append((neighbor, group))
+    #print groups.values()
     return len(groups.keys())
+
+assert constellations([(0, 0, 0, 0), (3, 0, 0, 0), (0, 3, 0, 0), (0, 0, 3, 0), (0, 0, 0, 3), (0, 0, 0, 6), (9, 0, 0, 0), (12, 0, 0, 0)]) == 2
+assert constellations([(-1, 2, 2, 0), (0, 0, 2, -2), (0, 0, 0, -2), (-1, 2, 0, 0), (-2, -2, -2, 2), (3, 0, 2, -1), (-1, 3, 2, 2), (-1, 0, -1, 0), (0, 2, 1, -2), (3, 0, 0, 0)]) == 4
+assert constellations([(1, -1, 0, 1), (2, 0, -1, 0), (3, 2, -1, 0), (0, 0, 3, 1), (0, 0, -1, -1), (2, 3, -2, 0), (-2, 2, 0, 0), (2, -2, 0, -1), (1, -1, 0, -1), (3, 2, 0, 2)]) == 3
+assert constellations([(1, -1, -1, -2), (-2, -2, 0, 1), (0, 2, 1, 3), (-2, 3, -2, 1), (0, 2, 3, -2), (-1, -1, 1, -2), (0, -2, -1, 0), (-2, 2, 3, -1), (1, 2, 2, 0), (-1, -2, 0, -2)]) == 8
 
 print constellations(points)
